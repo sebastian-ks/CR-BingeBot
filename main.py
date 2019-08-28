@@ -76,18 +76,22 @@ class Driver(elem.Elements):
                         pass
                 return st
 
-    def getEpisode_as_int(self,url):
+
+    def getEpisodeID(self,url):
+        first = 0
         if url == "" or url is None:
             return url
         else:
-            st = ""
-            area = url.split("episode-",1)[1][:4]
-            for i in range(len(area)):
+            st = url[-7:]
+            for letter in st:
                 try:
-                    st += str(int(area[i]))
-                except ValueError as f:
+                    first = int(letter)
+                    first = st.index(letter)
+                    break
+                except:
                     pass
-            return int(st)
+            newst = st[first:]
+            return int(newst)
 
     def write_to_file(self,url,browser):
         if "Folge" in browser.title or "Episode" in browser.title:
@@ -97,7 +101,7 @@ class Driver(elem.Elements):
                 if episodes is not None:
                     for e in episodes:
                         if self.getSeries(e) == self.getSeries(url):
-                            if self.getEpisode_as_int(e) < self.getEpisode_as_int(url):
+                            if self.getEpisodeID(e) < self.getEpisodeID(url): # ID to also detect new seasons
                                 episodes[episodes.index(e)] = url
                                 file.close()
                                 os.remove("progress.txt")
@@ -111,8 +115,6 @@ class Driver(elem.Elements):
             else:
                 file = open("progress.txt", "a+")
                 file.write(url + "\n")
-
-
 
 
     def controller(self,browser):
