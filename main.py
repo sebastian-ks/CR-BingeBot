@@ -8,17 +8,26 @@ from selenium.common.exceptions import NoSuchWindowException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.common.action_chains import ActionChains
+import ctypes
 import webbrowser
 import time
 import subprocess
+import elem
+import os
 
 #Driver class sets up Driver which opens window and loads CR
 #also controls the checkups when episodes are finished and always sets the episode automatically in full-screen mode
-class Driver():
+class Driver(elem.Elements):
     fullscreen = False
     savedEpisodeUrl = ""
     unclicked = True
-    durationTime = False
+
+    def __init__(self):
+        super().__init__()
+        self.initMe()
+
+    def initMe(self):
+        self.button()
 
     def openDebug(self,port,saveUnder):
         cmd = 'chrome.exe -remote-debugging-port=' + str(port) + ' --user-data-dir="' + saveUnder + '"'
@@ -44,31 +53,30 @@ class Driver():
 
         browser.switch_to.default_content()
 
-    #def startedEpisode(self,durTime,secs,browser):
-    #    skipTriggerTime = 90 #Trigger skip with 90 == skip request 1:30 bevore episode ends
-    #    while secs is not durTime-skipTriggerTime:
-    #        time.sleep(1)
-    #        secs += 1
-    #        if self.paused(browser):
-    #            break
-    #    if self.paused(browser):
-    #        print("paused")
-
-    def zeroint(self,durTime,part):#part int : 0 for min , 1 for seconds üart of time display
-        sp = durTime.split(":")[part]
-        if(int(sp[0]) is 0):
-            time = int(sp[1])
+    def getSeries(self,url):
+        if url == "" or url is None:
+            return url
         else:
-            time = int(sp)
-        return time
+            st = url.split("https://www.crunchyroll.com/",1)[1].split("/episode")[0]
+            if "de" in st:
+                st = st.split("/")[1]
+            return st
 
+    def getEpisode(self,url,browser):
+        if "Folge" in browser.title or "Episode" in browser.title: #don't get why this is needed, but else throws exception
+            if url == "" or url is None:                           #when returning to cr_homepage after launching first ep
+                return url                              #! SO IT'S NOT REDUNDANT !
+            else:
+                st = ""
+                area = url.split("episode-",1)[1][:4]
+                for i in range(len(area)):
+                    try:
+                        st += str(int(area[i]))
+                    except ValueError as f:
+                        pass
+                return st
 
-    def sec(self,durTime):
-        min = self.zeroint(durTime,0)
-        sec = self.zeroint(durTime,1)
-        return min*60+sec
-
-    def getEpisode(self,url):
+    def getEpisode_as_int(self,url):
         if url == "" or url is None:
             return url
         else:
@@ -79,29 +87,49 @@ class Driver():
                     st += str(int(area[i]))
                 except ValueError as f:
                     pass
-            return st
+            return int(st)
+
+    def write_to_file(self,url,browser):
+        if "Folge" in browser.title or "Episode" in browser.title:
+            if os.path.isfile("progress.txt"):
+                file = open("progress.txt", "r+")
+                episodes = file.readlines()
+                if episodes is not None:
+                    for e in episodes:
+                        if self.getSeries(e) == self.getSeries(url):
+                            if self.getEpisode_as_int(e) < self.getEpisode_as_int(url):
+                                episodes[episodes.index(e)] = url
+                                file.close()
+                                os.remove("progress.txt")
+                                open("progress.txt", "a+").writelines(episodes)
+                                return
+                            else:
+                                return
+                    file.write("\n" + url + "\n")
+                else:
+                    file.write(url + "\n")
+            else:
+                file = open("progress.txt", "a+")
+                file.write(url + "\n")
+
+
 
 
     def controller(self,browser):
         if "Folge" in browser.title or "Episode" in browser.title: #if an episode is watched
-            if (self.getEpisode(browser.current_url) != self.getEpisode(self.savedEpisodeUrl)):
-                print("neue folge")
+            if (self.getEpisode(browser.current_url,browser) != self.getEpisode(self.savedEpisodeUrl,browser)):
                 self.fullscreen = False
                 self.unclicked = True
-                self.durationTime = False
             if self.unclicked:
                 self.savedEpisodeUrl = browser.current_url #<-- update which episode is played currently
+                self.write_to_file(self.savedEpisodeUrl,browser)
                 self.unclicked = False
             if not self.fullscreen:
                 browser.implicitly_wait(1) # loading is guaranteed to take some time so already do 5sec buffer instead of recursion in self.maximize()
                 self.maximize(browser)
-            #else:
-            #    self.startedEpisode(sec(self.durTime),0,browser)
         else:
             self.fullscreen = False
             self.unclicked = True
-            self.durationTime = False
-
 
 
     def setupDriver(self):
@@ -114,7 +142,7 @@ class Driver():
             browser.get("https://www.crunchyroll.com/")
             browser.maximize_window()
         except:
-            print("no internet")
+            ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
 
         try:
             while True:
@@ -122,12 +150,7 @@ class Driver():
         except ElementNotInteractableException:
             print("loading error")
         except UnboundLocalError:
-            print("no internet")
+            pass
         except (NoSuchWindowException, WebDriverException) as e:
             print("browser quit because of an exception")
             browser.quit()
-
-
-
-if __name__ == '__main__':
-    Driver.setupDriver(Driver())
