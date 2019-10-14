@@ -6,7 +6,9 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from tkinter import *
 from tkinter import filedialog
+from functools import partial
 import main
+import elem
 
 class Ui_Dialog(main.Driver):
     x = __import__('elem').Elements.windowX
@@ -27,8 +29,16 @@ class Ui_Dialog(main.Driver):
 
 
     def events(self):
-        self.cr.clicked.connect(self.setupDriver)
+        self.cr.clicked.connect(partial(self.goTo,"https://www.crunchyroll.com"))
+        #for wid in self.episodeWidgets:
+        #    wid.clicked.connect(partial(self.hover,wid))
 
+    def hover(self,wid):
+        wid.setStyleSheet("background-color: white;")
+
+    def goTo(self,url):
+        elem.destination = url
+        self.setupDriver()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
