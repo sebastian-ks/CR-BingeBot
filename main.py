@@ -3,10 +3,13 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import NoSuchWindowException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
 import ctypes
 import webbrowser
@@ -27,37 +30,50 @@ class Driver(elem.Elements):
         self.initMe()
 
     def initMe(self):
-        self.button()
+        self.setup()
 
     def openDebug(self,port,saveUnder):
         cmd = 'chrome.exe -remote-debugging-port=' + str(port) + ' --user-data-dir="' + saveUnder + '"'
         subprocess.Popen('cd C:\\Program Files (x86)\\Google\\Chrome\\Application',shell=True)
         subprocess.Popen(cmd, shell=True)
 
+    def contHover(self,browser,container):
+        if "Folge" in browser.title or "Episode" in browser.title:
+            ac = ActionChains(browser)
+            ac.move_to_element(container).perform()
+            elem = browser.find_elements_by_xpath("//div[@data-testid='vilos-fullscreen_button']")
+            if len(elem) > 0:
+                try:
+                    elem[0].click()
+                    self.fullscreen = True
+                except (ElementClickInterceptedException, StaleElementReferenceException) as egg:
+                    self.contHover(browser,container)
+            else:
+                self.contHover(browser,container)
+
 
     def maximize(self,browser):
-        frames= browser.find_elements_by_tag_name('iframe')
-        for index in range(len(frames)):
-            browser.switch_to.default_content()
-            frame = browser.find_elements_by_tag_name('iframe')[index]
+        if "Folge" in browser.title or "Episode" in browser.title:
+            frame = browser.find_element_by_xpath("//iframe[@id='vilos-player']")
             browser.switch_to.frame(frame)
-            elem = browser.find_element_by_class_name('vjs-fullscreen-control')
-            if elem is not None:
+            container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
+            while self.fullscreen is not True:
                 try:
-                    elem.click()
-                    self.fullscreen = True
-                    break
-                except ElementNotInteractableException: #trying to click while still loading throws exception #if video is loading to long wait 5 sec and than try process again
-                    self.maximize(browser)
-                    break
+                    self.contHover(browser,container)
+                except StaleElementReferenceException:
+                    container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
+                    self.conHover(browser,container)
 
         browser.switch_to.default_content()
+
 
     def getSeries(self,url):
         if url == "" or url is None:
             return url
         else:
-            st = url.split("https://www.crunchyroll.com/",1)[1].split("/episode")[0]
+            st = url.split("https://www.crunchyroll.com/",1)[1]
+            print(st)
+            st = st.split("/episode")[0]
             if "de" in st:
                 st = st.split("/")[1]
             return st
@@ -94,6 +110,8 @@ class Driver(elem.Elements):
             return int(newst)
 
     def write_to_file(self,url,browser):
+        if url == "" or url is None:
+            return
         if "Folge" in browser.title or "Episode" in browser.title:
             if os.path.isfile("progress.txt"):
                 file = open("progress.txt", "r+")
@@ -141,7 +159,7 @@ class Driver(elem.Elements):
         options.add_experimental_option("debuggerAddress","localhost:" + str(port))
         try:
             browser = webdriver.Chrome(ChromeDriverManager().install(),options=options)
-            browser.get("https://www.crunchyroll.com/")
+            browser.get(elem.destination)
             browser.maximize_window()
         except:
             ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
