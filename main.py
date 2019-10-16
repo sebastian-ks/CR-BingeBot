@@ -72,7 +72,6 @@ class Driver(elem.Elements):
             return url
         else:
             st = url.split("https://www.crunchyroll.com/",1)[1]
-            print(st)
             st = st.split("/episode")[0]
             if "de" in st:
                 st = st.split("/")[1]
@@ -84,7 +83,10 @@ class Driver(elem.Elements):
                 return url                              #! SO IT'S NOT REDUNDANT !
             else:
                 st = ""
-                area = url.split("episode-",1)[1][:4]
+                try:
+                    area = url.split("episode-",1)[1][:4]
+                except IndexError as ie:
+                    print("das ist die url:" + url)
                 for i in range(len(area)):
                     try:
                         st += str(int(area[i]))
@@ -117,20 +119,21 @@ class Driver(elem.Elements):
                 file = open("progress.txt", "r+")
                 episodes = file.readlines()
                 if episodes is not None:
-                    for e in episodes:
+                    for e in episodes:#check for sequel episode
                         if self.getSeries(e) == self.getSeries(url):
                             if self.getEpisodeID(e) < self.getEpisodeID(url): # ID to also detect new seasons
-                                episodes[episodes.index(e)] = url
+                                del episodes[episodes.index(e)]
+                                episodes.append(url + "\n")
                                 file.close()
                                 os.remove("progress.txt")
                                 open("progress.txt", "a+").writelines(episodes)
                                 return
                             else:
                                 return
-                    file.write("\n" + url + "\n")
-                else:
+                    file.write(url + "\n") #new series entry
+                else:# progress file is empty
                     file.write(url + "\n")
-            else:
+            else:#progress file does not exist
                 file = open("progress.txt", "a+")
                 file.write(url + "\n")
 
