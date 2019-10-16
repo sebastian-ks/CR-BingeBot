@@ -30,11 +30,15 @@ class Ui_Dialog(main.Driver):
 
     def events(self):
         self.cr.clicked.connect(partial(self.goTo,"https://www.crunchyroll.com"))
-        #for wid in self.episodeWidgets:
-        #    wid.clicked.connect(partial(self.hover,wid))
+        for wid in self.episodeWidgets:
+            wid.entered.connect(partial(self.hover,wid,"in"))
+            wid.left.connect(partial(self.hover,wid,"out"))
 
-    def hover(self,wid):
-        wid.setStyleSheet("background-color: white;")
+    def hover(self,obj,mouseState):
+        if mouseState is "in":
+            obj.setStyleSheet("background-color: rgba(255,255,255,75);")
+        elif mouseState is "out":
+            obj.setStyleSheet("background-color: none;")
 
     def goTo(self,url):
         elem.destination = url

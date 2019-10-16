@@ -22,11 +22,20 @@ class Elements(QWidget):
 
     class ClickWidget(QWidget):
         clicked = pyqtSignal()
+        entered = pyqtSignal()
+        left = pyqtSignal()
+
         def __init__(self, parent):
             QWidget.__init__(self, parent)
 
         def mousePressEvent(self, event):
             self.clicked.emit()
+
+        def enterEvent(self, event):
+            self.entered.emit()
+
+        def leaveEvent(self, event):
+            self.left.emit()
 
     def point(self,posString,QWidget):
         if posString == "topRight":
@@ -64,14 +73,8 @@ class Elements(QWidget):
         for wid in self.episodeWidgets:
             i = self.episodeWidgets.index(wid)
             wid.setGeometry(QRect(0,i*(mainPlaneThird+2), self.window_Width, mainPlaneThird))
-            wid.setObjectName("#epWid")
-            wid.setStyleSheet("""
-            #epWid {
-                background-color: white;
-                border-color: black;
-                border:2px solid;
-            }
-            """)
+            wid.setAttribute(Qt.WA_StyledBackground)
+            wid.setStyleSheet("background-color: none;")
 
 
 
