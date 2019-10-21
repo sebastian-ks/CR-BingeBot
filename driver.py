@@ -16,6 +16,8 @@ import webbrowser
 import time
 import subprocess
 import elem
+from elem import Elements
+from general import Methods
 import os
 
 #Driver class sets up Driver which opens window and loads CR
@@ -67,16 +69,6 @@ class Driver(elem.Elements):
         browser.switch_to.default_content()
 
 
-    def getSeries(self,url):
-        if url == "" or url is None:
-            return url
-        else:
-            st = url.split("https://www.crunchyroll.com/",1)[1]
-            st = st.split("/episode")[0]
-            if "de" in st:
-                st = st.split("/")[1]
-            return st
-
     def getEpisode(self,url,browser):
         if "Folge" in browser.title or "Episode" in browser.title: #don't get why this is needed, but else throws exception
             if url == "" or url is None:                           #when returning to cr_homepage after launching first ep
@@ -95,22 +87,6 @@ class Driver(elem.Elements):
                 return st
 
 
-    def getEpisodeID(self,url):
-        first = 0
-        if url == "" or url is None:
-            return url
-        else:
-            st = url[-7:]
-            for letter in st:
-                try:
-                    first = int(letter)
-                    first = st.index(letter)
-                    break
-                except:
-                    pass
-            newst = st[first:]
-            return int(newst)
-
     def write_to_file(self,url,browser):
         if url == "" or url is None:
             return
@@ -120,8 +96,8 @@ class Driver(elem.Elements):
                 episodes = file.readlines()
                 if episodes is not None:
                     for e in episodes:#check for sequel episode
-                        if self.getSeries(e) == self.getSeries(url):
-                            if self.getEpisodeID(e) < self.getEpisodeID(url): # ID to also detect new seasons
+                        if Methods.getSeries(e) == Methods.getSeries(url):
+                            if Methods.getEpisodeID(e) < Methods.getEpisodeID(url): # ID to also detect new seasons
                                 del episodes[episodes.index(e)]
                                 episodes.append(url + "\n")
                                 file.close()
@@ -162,7 +138,7 @@ class Driver(elem.Elements):
         options.add_experimental_option("debuggerAddress","localhost:" + str(port))
         try:
             browser = webdriver.Chrome(ChromeDriverManager().install(),options=options)
-            browser.get(elem.destination)
+            browser.get(Elements.destination)
             browser.maximize_window()
         except:
             ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
@@ -177,3 +153,4 @@ class Driver(elem.Elements):
         except (NoSuchWindowException, WebDriverException) as e:
             print("browser quit because of an exception")
             browser.quit()
+            self.updateWidgets(self.mainPlane)
