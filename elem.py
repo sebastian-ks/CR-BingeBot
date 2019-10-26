@@ -3,6 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from general import Methods
 import general
+import os
 
 class Elements(QWidget, general.Methods):
     windowX = 800
@@ -15,17 +16,26 @@ class Elements(QWidget, general.Methods):
     mainPlaneThird = (window_Height-topBarHeight-bottomBarHeight)/3
     activeEpisodes = []
     delbtns = []
-    titleLabels = []
     episodeLabels = []
+    mugs = []
     page = 0
 
     class Clicklabel(QLabel):
         clicked = pyqtSignal()
+        entered = pyqtSignal()
+        left = pyqtSignal()
+
         def __init__(self, parent):
             QLabel.__init__(self, parent)
 
         def mousePressEvent(self, event):
             self.clicked.emit()
+
+        def enterEvent(self, event):
+            self.entered.emit()
+
+        def leaveEvent(self, event):
+            self.left.emit()
 
     class ClickWidget(QWidget):
         clicked = pyqtSignal()
@@ -54,43 +64,49 @@ class Elements(QWidget, general.Methods):
         return pos
 
     def updateWidgets(self,parent):
-        file = open("progress.txt", "r")
-        episodes = file.readlines()
+        if not os.path.isfile("progress.txt"):#if progress file doesn't exist create it
+            file = open("progress.txt", "a+")
+        else:
+            file = open("progress.txt", "r")
+        episodes = list(reversed(file.readlines()))
         showsOnPage = episodes[(self.page*3):(self.page*3+3)]
         showCount = len(showsOnPage)
         for e in range(showCount):
             if len(self.activeEpisodes) < 3:
                 self.activeEpisodes.append(self.ClickWidget(parent))
-                self.titleLabels.append(QLabel(self.activeEpisodes[e]))
-                self.episodeLabels.append(QLabel(self.activeEpisodes[e]))
-                self.delbtns.append(self.Clicklabel(self.activeEpisodes[e]))
+                self.episodeLabels.append(QLabel(self.activeEpisodes[len(self.activeEpisodes)-1]))
+                self.mugs.append(QLabel(self.activeEpisodes[len(self.activeEpisodes)-1]))
+                self.delbtns.append(self.Clicklabel(self.activeEpisodes[len(self.activeEpisodes)-1]))
         for wid in self.activeEpisodes[0:showCount]:
             i = self.activeEpisodes.index(wid)
+            #widgets
             wid.setGeometry(QRect(0,i*(self.mainPlaneThird+2), self.window_Width, self.mainPlaneThird))
             wid.setAttribute(Qt.WA_StyledBackground)
             wid.setStyleSheet("background-color: none;")
             wid.show()
-            #SeriesLabel
-            self.titleLabels[i].setText("<font color='white'>" + Methods.getSeries(showsOnPage[i]) + "</font>")
-            self.titleLabels[i].move(self.window_Width/2,self.mainPlaneThird/2)
-            self.titleLabels[i].setStyleSheet("background-color: none;")
-            self.titleLabels[i].show()
-            #EpisodeLabel
-            self.episodeLabels[i].setText("<font color='white'>Episode " + Methods.getEpisode(showsOnPage[i]) + "</font>")
-            self.episodeLabels[i].move(self.window_Width/2,self.mainPlaneThird/1.5)
+            #labels
+            self.episodeLabels[i].setText("<font color='white'>" + Methods.getSeries(showsOnPage[i]) + "<br><br>"
+                                            +Methods.print_season(showsOnPage[i]) + "<br><br>"
+                                            +Methods.getTitle(showsOnPage[i])+"</font>")
+            self.episodeLabels[i].move(self.window_Width/2,self.mainPlaneThird/3.5)
             self.episodeLabels[i].setStyleSheet("background-color: none;")
             self.episodeLabels[i].show()
+            #mugs
+            mug_og = QPixmap('assets\\mugs\\'+Methods.getMugCode(showsOnPage[i]))
+            print(Methods.getMugCode(showsOnPage[i]))
+            self.mugs[i].setPixmap(mug_og)
+            self.mugs[i].move(5,5)
+            self.mugs[i].setStyleSheet("background-color: none;")
+            self.mugs[i].show()
             #Deletion
-            #self.delbtns[i].move(self.window_Width-30,5+i*self.mainPlaneThird)
             self.delbtns[i].move(self.window_Width-30,5)
             self.delbtns[i].setPixmap(self.rmPixmap)
             self.delbtns[i].setStyleSheet("background-color: none;")
             self.delbtns[i].show()
 
-        diff = len(self.titleLabels) - showCount
+        diff = len(self.episodeLabels) - showCount
         if diff > 0: #hide Labels when there used to be 3 eWidgets but then <3
             for s in range(diff):
-                self.titleLabels[(s+1)*-1].hide()
                 self.episodeLabels[(s+1)*-1].hide()
                 self.activeEpisodes[(s+1)*-1].hide()
                 self.delbtns[(s+1)*-1].hide()
@@ -136,13 +152,25 @@ class Elements(QWidget, general.Methods):
         self.settings.show()
 
         self.forward = self.Clicklabel(self)
-        self.fwPixmap_og = QPixmap('assets\\Gear.png')
-        self.fwPixmap = self.fwPixmap_og.scaled(self.bottomBarHeight,self.bottomBarHeight)
+        self.fwPixmap_og = QPixmap('assets\\ArrowRightgr.png')
+        self.fwPixmap_og2 = QPixmap('assets\\ArrowRight.png')
+        self.fwPixmap = self.fwPixmap_og.scaled(self.bottomBarHeight-10,self.bottomBarHeight-10)
+        self.fwPixmap2 = self.fwPixmap_og2.scaled(self.bottomBarHeight-10,self.bottomBarHeight-10)
         self.forward.setPixmap(self.fwPixmap)
-        self.forward.move(self.window_Width-self.bottomBarHeight,self.window_Height-self.bottomBarHeight)
+        self.forward.move(self.window_Width-self.bottomBarHeight,self.window_Height-self.bottomBarHeight+5)
         self.forward.show()
 
         self.back = self.Clicklabel(self)
-        self.back.setPixmap(self.fwPixmap)
-        self.back.move(self.window_Width-self.bottomBarHeight*2,self.window_Height-self.bottomBarHeight)
+        self.bkPixmap_og = QPixmap('assets\\ArrowLeftgr.png')
+        self.bkPixmap_og2 = QPixmap('assets\\ArrowLeft.png')
+        self.bkPixmap = self.bkPixmap_og.scaled(self.bottomBarHeight-10,self.bottomBarHeight-10)
+        self.bkPixmap2 = self.bkPixmap_og2.scaled(self.bottomBarHeight-10,self.bottomBarHeight-10)
+        self.back.setPixmap(self.bkPixmap)
+        self.back.move(self.window_Width-self.bottomBarHeight*2,self.window_Height-self.bottomBarHeight+5)
         self.back.show()
+
+        self.erase = self.Clicklabel(self.bottomBar)
+        self.erase.setText("<font face='roboto' color='#7F7F7F' size=5>Remove All</font>")
+        self.erase.setStyleSheet("background-color: none;")
+        self.erase.move(5,5)
+        self.erase.show()

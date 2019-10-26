@@ -13,6 +13,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
 import ctypes
 import webbrowser
+import urllib.request
 import time
 import subprocess
 import elem
@@ -64,9 +65,31 @@ class Driver(elem.Elements):
                     self.contHover(browser,container)
                 except StaleElementReferenceException:
                     container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
-                    self.conHover(browser,container)
+                    self.contHover(browser,container)
 
         browser.switch_to.default_content()
+
+    def getData(self,browser):
+        if "Folge" in browser.title or "Episode" in browser.title:
+            infobox = browser.find_element_by_xpath("//div[@id='showmedia_about_media']")
+            title = infobox.find_element_by_xpath(".//a[@class='text-link']").text
+            h4 = infobox.find_elements_by_xpath(".//h4")
+            ep = h4[1].text
+            desc = browser.find_element_by_xpath("//div[@id='showmedia_about_info']")
+            epName = desc.find_element_by_xpath(".//h4").text
+            return title, ep, epName
+
+    def getMugs(self,browser,ep,title):
+        if "Folge" in browser.title or "Episode" in browser.title:
+            mugs = browser.find_elements_by_xpath("//img[@class='mug']")
+            ep_spans = browser.find_elements_by_xpath("//span[@class='collection-carousel-overlay-top ellipsis']")
+            for span in ep_spans:#get mug by looking at number of episode and comparing it with episode just gotten from self.getData
+                if span.text == Methods.episode(ep):
+                    i = ep_spans.index(span)
+                    break
+            epMug = mugs[i]
+            src = epMug.get_attribute('src')
+            urllib.request.urlretrieve(src, "assets\\mugs\\"+title+Methods.season(ep)+Methods.episodeCode(ep)+".jpg")
 
 
     def getEpisode(self,url,browser):
@@ -78,7 +101,8 @@ class Driver(elem.Elements):
                 try:
                     area = url.split("episode-",1)[1][:4]
                 except IndexError as ie:
-                    print("das ist die url:" + url)
+                    print(self.savedEpisodeUrl)
+                    print(browser.current_url)
                 for i in range(len(area)):
                     try:
                         st += str(int(area[i]))
@@ -87,7 +111,7 @@ class Driver(elem.Elements):
                 return st
 
 
-    def write_to_file(self,url,browser):
+    def write_to_file(self,url,title,ep,epName,browser):
         if url == "" or url is None:
             return
         if "Folge" in browser.title or "Episode" in browser.title:
@@ -95,23 +119,18 @@ class Driver(elem.Elements):
                 file = open("progress.txt", "r+")
                 episodes = file.readlines()
                 if episodes is not None:
-                    for e in episodes:#check for sequel episode
-                        if Methods.getSeries(e) == Methods.getSeries(url):
-                            if Methods.getEpisodeID(e) < Methods.getEpisodeID(url): # ID to also detect new seasons
-                                del episodes[episodes.index(e)]
-                                episodes.append(url + "\n")
-                                file.close()
-                                os.remove("progress.txt")
-                                open("progress.txt", "a+").writelines(episodes)
-                                return
-                            else:
-                                return
-                    file.write(url + "\n") #new series entry
+                    for e in episodes:#check same series to replace
+                        if Methods.getSeries(e) == title:
+                            del episodes[episodes.index(e)]
+                            episodes.append(url + "#"+title+"#"+ep+"#"+epName+ "\n")
+                            file.close()
+                            os.remove("progress.txt")
+                            open("progress.txt", "a+").writelines(episodes)
+                            return
+
+                    file.write(url + "#"+title+"#"+ep+"#"+epName+ "\n") #new series entry
                 else:# progress file is empty
-                    file.write(url + "\n")
-            else:#progress file does not exist
-                file = open("progress.txt", "a+")
-                file.write(url + "\n")
+                    file.write(url + "#"+title+"#"+ep+"#"+epName+ "\n")
 
 
     def controller(self,browser):
@@ -120,8 +139,10 @@ class Driver(elem.Elements):
                 self.fullscreen = False
                 self.unclicked = True
             if self.unclicked:
-                self.savedEpisodeUrl = browser.current_url #<-- update which episode is played currently
-                self.write_to_file(self.savedEpisodeUrl,browser)
+                self.savedEpisodeUrl = browser.current_url
+                title,ep,epName = self.getData(browser) #<-- update which episode is played currently
+                self.getMugs(browser,ep,title)
+                self.write_to_file(self.savedEpisodeUrl,title,ep,epName,browser)
                 self.unclicked = False
             if not self.fullscreen:
                 browser.implicitly_wait(1) # loading is guaranteed to take some time so already do 5sec buffer instead of recursion in self.maximize()
@@ -152,5 +173,6 @@ class Driver(elem.Elements):
             pass
         except (NoSuchWindowException, WebDriverException) as e:
             print("browser quit because of an exception")
+            print(e)
             browser.quit()
-            self.updateWidgets(self.mainPlane)
+            Methods.restart() #no update because of weird bug that hides widget (no clue)
