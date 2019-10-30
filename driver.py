@@ -18,81 +18,102 @@ import time
 import subprocess
 import elem
 from elem import Elements
-from general import Methods
+import general
+from pynput.mouse import Button, Listener
 import os
+import mouse
+
 
 #Driver class sets up Driver which opens window and loads CR
 #also controls the checkups when episodes are finished and always sets the episode automatically in full-screen mode
-class Driver(elem.Elements):
+class Driver(general.Methods):
     fullscreen = False
     savedEpisodeUrl = ""
     unclicked = True
+    skipInit = False
+    nextEP = ""
 
-    def __init__(self):
-        super().__init__()
-        self.initMe()
-
-    def initMe(self):
-        self.setup()
-
-    def openDebug(self,port,saveUnder):
+    def openDebug(port,saveUnder):
         cmd = 'chrome.exe -remote-debugging-port=' + str(port) + ' --user-data-dir="' + saveUnder + '"'
         subprocess.Popen('cd C:\\Program Files (x86)\\Google\\Chrome\\Application',shell=True)
         subprocess.Popen(cmd, shell=True)
 
-    def contHover(self,browser,container):
+    def maximize(browser,container):
         if "Folge" in browser.title or "Episode" in browser.title:
             ac = ActionChains(browser)
             ac.move_to_element(container).perform()
-            elem = browser.find_elements_by_xpath("//div[@data-testid='vilos-fullscreen_button']")
-            if len(elem) > 0:
+
+            dur = browser.find_elements_by_xpath("//div[@data-testid='vilos-duration']")
+            max = browser.find_elements_by_xpath("//div[@data-testid='vilos-fullscreen_button']")
+            if len(max) > 0 and len(dur) > 0:
                 try:
-                    elem[0].click()
-                    self.fullscreen = True
+                    max[0].click()
+                    Driver.fullscreen = True
+                    return dur[0].text
                 except (ElementClickInterceptedException, StaleElementReferenceException) as egg:
-                    self.contHover(browser,container)
+                    Driver.maximize(browser,container)
             else:
-                self.contHover(browser,container)
+                Driver.maximize(browser,container)
 
 
-    def maximize(self,browser):
+    def interact(browser):
         if "Folge" in browser.title or "Episode" in browser.title:
             frame = browser.find_element_by_xpath("//iframe[@id='vilos-player']")
             browser.switch_to.frame(frame)
             container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
-            while self.fullscreen is not True:
+            while Driver.fullscreen is not True:
                 try:
-                    self.contHover(browser,container)
+                    return Driver.maximize(browser,container)
                 except StaleElementReferenceException:
                     container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
-                    self.contHover(browser,container)
+                    return Driver.maximize(browser,container)
 
         browser.switch_to.default_content()
 
-    def getData(self,browser):
-        if "Folge" in browser.title or "Episode" in browser.title:
+    def getInfoBox(browser):
+        try:
             infobox = browser.find_element_by_xpath("//div[@id='showmedia_about_media']")
-            title = infobox.find_element_by_xpath(".//a[@class='text-link']").text
-            h4 = infobox.find_elements_by_xpath(".//h4")
-            ep = h4[1].text
-            desc = browser.find_element_by_xpath("//div[@id='showmedia_about_info']")
-            epName = desc.find_element_by_xpath(".//h4").text
-            return title, ep, epName
+            return infobox
+        except NoSuchElementException:
+            Driver.getInfoBox(browser)
 
-    def getMugs(self,browser,ep,title):
+    def getData(browser):
+        if "Folge" in browser.title or "Episode" in browser.title:
+            infobox = Driver.getInfoBox(browser)#avoid nosuchelement Exception
+            if infobox is not None:#func started without page loading prob so try again
+                title = infobox.find_element_by_xpath(".//a[@class='text-link']").text
+                h4 = infobox.find_elements_by_xpath(".//h4")
+                ep = h4[1].text
+                desc = browser.find_element_by_xpath("//div[@id='showmedia_about_info']")
+                epName = desc.find_element_by_xpath(".//h4").text
+                if title is None or ep is None or epName is None:
+                    Driver.getData(browser)
+                else:
+                    return title,ep,epName
+            else:
+                Driver.getData(browser)
+
+    def getMugs(browser,ep,title):
         if "Folge" in browser.title or "Episode" in browser.title:
             mugs = browser.find_elements_by_xpath("//img[@class='mug']")
             ep_spans = browser.find_elements_by_xpath("//span[@class='collection-carousel-overlay-top ellipsis']")
+            links = browser.find_elements_by_xpath("//a[@class='link block-link block']")
             for span in ep_spans:#get mug by looking at number of episode and comparing it with episode just gotten from self.getData
-                if span.text == Methods.episode(ep):
+                if span.text == Driver.episode(ep):
                     i = ep_spans.index(span)
                     break
             epMug = mugs[i]
+            try:
+                nextEp = links[i+1].get_attribute("href")
+            except IndexError:
+                nextEp = ""
             src = epMug.get_attribute('src')
-            urllib.request.urlretrieve(src, "assets\\mugs\\"+title+Methods.season(ep)+Methods.episodeCode(ep)+".jpg")
+            dir = "assets\\mugs\\"+title+"#"+Driver.season(ep)+Driver.episodeCode(ep)+".jpg"
+            if not os.path.exists(dir):
+                urllib.request.urlretrieve(src, dir)
+            return nextEp
 
-
-    def getEpisode(self,url,browser):
+    def getEpisode(url,browser):
         if "Folge" in browser.title or "Episode" in browser.title: #don't get why this is needed, but else throws exception
             if url == "" or url is None:                           #when returning to cr_homepage after launching first ep
                 return url                              #! SO IT'S NOT REDUNDANT !
@@ -101,7 +122,7 @@ class Driver(elem.Elements):
                 try:
                     area = url.split("episode-",1)[1][:4]
                 except IndexError as ie:
-                    print(self.savedEpisodeUrl)
+                    print(Driver.savedEpisodeUrl)
                     print(browser.current_url)
                 for i in range(len(area)):
                     try:
@@ -111,7 +132,7 @@ class Driver(elem.Elements):
                 return st
 
 
-    def write_to_file(self,url,title,ep,epName,browser):
+    def write_to_file(url,title,ep,epName,browser):
         if url == "" or url is None:
             return
         if "Folge" in browser.title or "Episode" in browser.title:
@@ -120,8 +141,9 @@ class Driver(elem.Elements):
                 episodes = file.readlines()
                 if episodes is not None:
                     for e in episodes:#check same series to replace
-                        if Methods.getSeries(e) == title:
-                            del episodes[episodes.index(e)]
+                        if Driver.getSeries(e) == title:
+                            i = episodes.index(e)
+                            del episodes[i]
                             episodes.append(url + "#"+title+"#"+ep+"#"+epName+ "\n")
                             file.close()
                             os.remove("progress.txt")
@@ -133,40 +155,54 @@ class Driver(elem.Elements):
                     file.write(url + "#"+title+"#"+ep+"#"+epName+ "\n")
 
 
-    def controller(self,browser):
+    def skip(browser):
+        browser.get(Driver.nextEP)
+        Driver.fullscreen = False
+        Driver.skipInit = False
+        Driver.nextEP = ""
+
+
+    def controller(browser):
         if "Folge" in browser.title or "Episode" in browser.title: #if an episode is watched
-            if (self.getEpisode(browser.current_url,browser) != self.getEpisode(self.savedEpisodeUrl,browser)):
-                self.fullscreen = False
-                self.unclicked = True
-            if self.unclicked:
-                self.savedEpisodeUrl = browser.current_url
-                title,ep,epName = self.getData(browser) #<-- update which episode is played currently
-                self.getMugs(browser,ep,title)
-                self.write_to_file(self.savedEpisodeUrl,title,ep,epName,browser)
-                self.unclicked = False
-            if not self.fullscreen:
-                browser.implicitly_wait(1) # loading is guaranteed to take some time so already do 5sec buffer instead of recursion in self.maximize()
-                self.maximize(browser)
+            if (Driver.getEpisode(browser.current_url,browser) != Driver.getEpisode(Driver.savedEpisodeUrl,browser)):
+                Driver.fullscreen = False
+                Driver.unclicked = True
+            if Driver.unclicked:
+                Driver.savedEpisodeUrl = browser.current_url
+                title,ep,epName = Driver.getData(browser)
+                Driver.nextEP = Driver.getMugs(browser,ep,title)
+                Driver.write_to_file(Driver.savedEpisodeUrl,title,ep,epName,browser)
+                Driver.unclicked = False
+            if not Driver.fullscreen and not Driver.skipInit:
+                browser.implicitly_wait(1) # loading is guaranteed to take some time so already do 5sec buffer instead of recursion in Driver.maximize()
+                dur = Driver.interact(browser)
+            else:
+                if not Driver.skipInit and Driver.nextEP:
+                    mouse.on_right_click(lambda: os.system("pythonw skip.pyw"))
+                    Driver.skipInit = True
+                if os.path.exists("temp"):
+                    os.remove("temp")
+                    Driver.skip(browser)
         else:
-            self.fullscreen = False
-            self.unclicked = True
+            Driver.fullscreen = False
+            Driver.unclicked = True
 
 
-    def setupDriver(self):
+    def setupDriver(url):
         port = 4269
-        self.openDebug(port,"D:\\Selenium")
+        Driver.openDebug(port,"D:\\Selenium")
         options = Options()
         options.add_experimental_option("debuggerAddress","localhost:" + str(port))
         try:
             browser = webdriver.Chrome(ChromeDriverManager().install(),options=options)
-            browser.get(Elements.destination)
+            browser.get(url)
             browser.maximize_window()
         except:
             ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
 
         try:
             while True:
-                self.controller(browser)
+                Driver.controller(browser)
         except ElementNotInteractableException:
             print("loading error")
         except UnboundLocalError:
@@ -175,4 +211,4 @@ class Driver(elem.Elements):
             print("browser quit because of an exception")
             print(e)
             browser.quit()
-            Methods.restart() #no update because of weird bug that hides widget (no clue)
+            Driver.restart() #no update because of weird bug that hides widget (no clue)

@@ -1,7 +1,9 @@
 import sys
 import os
+import skip
 
 class Methods():
+
     def restart():
         python = sys.executable
         os.execl(python,python, * sys.argv)
@@ -92,10 +94,29 @@ class Methods():
             newst = st[first:]
             return int(newst)
 
+    def manageMugs():
+        mugDir = "assets\\mugs"
+        if not os.path.exists(mugDir):
+            os.mkdir(mugDir)
+        else:
+            file = open("progress.txt", "r")
+            episodes = file.readlines()
+            if episodes:
+                newestSeries = Methods.getSeries(episodes[-1])
+                topMug = Methods.getMugCode(episodes[-1])
+                for mug in os.listdir(mugDir):
+                    if mug != topMug:
+                        if Methods.getSeries_from_mug_code(mug) == newestSeries:
+                            os.remove(mugDir+"\\"+mug)
+
+
     def getMugCode(entry):
         epID = Methods.getEpisode(entry)
         series = Methods.getSeries(entry)
         season = Methods.season(epID)
         episode = Methods.episodeCode(epID)
-        code = series+season+episode+".jpg"
+        code = series+"#"+season+episode+".jpg"
         return code
+
+    def getSeries_from_mug_code(code):
+        return code.split("#")[0]

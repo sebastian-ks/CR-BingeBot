@@ -4,14 +4,14 @@ from PyQt5.QtWidgets import *
 from general import Methods
 import general
 import os
+import skip
 
 class Elements(QWidget, general.Methods):
     windowX = 800
     windowY = 240
     window_Height = 400
     window_Width = 500
-    destination = ""    # should be in a global var module but unecessary for just one
-    topBarHeight = 60
+    topBarHeight = 55
     bottomBarHeight = 40
     mainPlaneThird = (window_Height-topBarHeight-bottomBarHeight)/3
     activeEpisodes = []
@@ -19,6 +19,7 @@ class Elements(QWidget, general.Methods):
     episodeLabels = []
     mugs = []
     page = 0
+    activeWindow = "main"
 
     class Clicklabel(QLabel):
         clicked = pyqtSignal()
@@ -63,11 +64,13 @@ class Elements(QWidget, general.Methods):
             pos = QPoint(0,self.window_Height-QWidget.minimumSizeHint().height()*2)
         return pos
 
+
     def updateWidgets(self,parent):
         if not os.path.isfile("progress.txt"):#if progress file doesn't exist create it
             file = open("progress.txt", "a+")
         else:
             file = open("progress.txt", "r")
+        Methods.manageMugs()
         episodes = list(reversed(file.readlines()))
         showsOnPage = episodes[(self.page*3):(self.page*3+3)]
         showCount = len(showsOnPage)
@@ -85,15 +88,14 @@ class Elements(QWidget, general.Methods):
             wid.setStyleSheet("background-color: none;")
             wid.show()
             #labels
-            self.episodeLabels[i].setText("<font color='white'>" + Methods.getSeries(showsOnPage[i]) + "<br><br>"
-                                            +Methods.print_season(showsOnPage[i]) + "<br><br>"
+            self.episodeLabels[i].setText("<font color='white' size=5><b>" + Methods.getSeries(showsOnPage[i]) + "</b></font><br><br>"
+                                            +"<font color ='#EEEDED' size=4>"+Methods.print_season(showsOnPage[i]) + "<br>"
                                             +Methods.getTitle(showsOnPage[i])+"</font>")
-            self.episodeLabels[i].move(self.window_Width/2,self.mainPlaneThird/3.5)
+            self.episodeLabels[i].move(self.window_Width/2,self.mainPlaneThird/6)
             self.episodeLabels[i].setStyleSheet("background-color: none;")
             self.episodeLabels[i].show()
             #mugs
             mug_og = QPixmap('assets\\mugs\\'+Methods.getMugCode(showsOnPage[i]))
-            print(Methods.getMugCode(showsOnPage[i]))
             self.mugs[i].setPixmap(mug_og)
             self.mugs[i].move(5,5)
             self.mugs[i].setStyleSheet("background-color: none;")
@@ -112,27 +114,27 @@ class Elements(QWidget, general.Methods):
                 self.delbtns[(s+1)*-1].hide()
 
 
-    def setup(self):
-
-        #widgets
+    def setup(self,w,h):
         self.topBar = QWidget(self)
-        self.topBar.setGeometry(QRect(0, 0, self.window_Width, self.topBarHeight))
+        self.topBar.setGeometry(QRect(0, 0, w, self.topBarHeight))
         self.topBar.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(199, 021, 133, 255));\n"
 "border-color: black;\n"
-"border: 4px solid;")
+"border: 3px solid;")
 
         self.mainPlane = QWidget(self)
-        self.mainPlane.setGeometry(QRect(0, self.topBarHeight, self.window_Width, self.window_Height-self.topBarHeight-self.bottomBarHeight))
+        self.mainPlane.setGeometry(QRect(0, self.topBarHeight, w, h-self.topBarHeight-self.bottomBarHeight))
         self.mainPlane.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(077,077,077,255));")
 
         self.bottomBar = QWidget(self)
-        self.bottomBar.setGeometry(QRect(0, self.window_Height-self.bottomBarHeight, self.window_Width, self.bottomBarHeight))
+        self.bottomBar.setGeometry(QRect(0, h-self.bottomBarHeight, w, self.bottomBarHeight))
         self.bottomBar.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(030,030,030,255));\n"
 "border-color: black;\n"
 "border: 2px solid;")
 
         self.rmPixmap_og = QPixmap('assets\\Cross.png')
         self.rmPixmap = self.rmPixmap_og.scaled(20,20)
+        self.rmPixmap2_og = QPixmap('assets\\Crossw.png')
+        self.rmPixmap2 = self.rmPixmap2_og.scaled(20,20)
         self.updateWidgets(self.mainPlane)
 
 
@@ -141,15 +143,29 @@ class Elements(QWidget, general.Methods):
         self.crPixmap_og = QPixmap('assets\\CR_Icon.png')
         self.crPixmap = self.crPixmap_og.scaled(40,40)
         self.cr.setPixmap(self.crPixmap)
-        self.cr.move(self.window_Width-120,10)
+        self.cr.move(self.window_Width-200,7)
         self.cr.show()
 
         self.settings = self.Clicklabel(self)
         self.setPixmap_og = QPixmap('assets\\Gear.png')
+        self.setPixmap2_og = QPixmap('assets\\Gearw.png')
         self.setPixmap = self.setPixmap_og.scaled(40,40)
+        self.setPixmap2 = self.setPixmap2_og.scaled(40,40)
         self.settings.setPixmap(self.setPixmap)
-        self.settings.move(self.window_Width-60,10)
+        self.settings.move(self.window_Width-145,7)
         self.settings.show()
+
+        self.quit = self.Clicklabel(self)
+        self.quitPixmap = QPixmap('assets\\close-window.png').scaled(40,40)
+        self.quit.setPixmap(self.quitPixmap)
+        self.quit.move(self.window_Width-40,0)
+        self.quit.show()
+
+        self.mini = self.Clicklabel(self)
+        self.miniPixmap = QPixmap('assets\\Minimize.png').scaled(30,30)
+        self.mini.setPixmap(self.miniPixmap)
+        self.mini.move(self.window_Width-66,4)
+        self.mini.show()
 
         self.forward = self.Clicklabel(self)
         self.fwPixmap_og = QPixmap('assets\\ArrowRightgr.png')
@@ -174,3 +190,8 @@ class Elements(QWidget, general.Methods):
         self.erase.setStyleSheet("background-color: none;")
         self.erase.move(5,5)
         self.erase.show()
+
+    def setupSettings(self,w,h):
+        self.erase.hide()
+        self.mainPlane.setGeometry(QRect(0, 0, w, h-self.bottomBarHeight))
+        self.bottomBar.setGeometry(QRect(0, h-self.bottomBarHeight, w, self.bottomBarHeight))
