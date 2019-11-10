@@ -19,7 +19,6 @@ class Elements(QWidget, general.Methods):
     episodeLabels = []
     mugs = []
     page = 0
-    activeWindow = "main"
 
     class Clicklabel(QLabel):
         clicked = pyqtSignal()
@@ -66,6 +65,11 @@ class Elements(QWidget, general.Methods):
 
 
     def updateWidgets(self,parent):
+        if not os.path.isfile("settings"):
+            s = open("settings", "w")
+            s.write("HK:None\nShortcut:False\nSkipTimer:True")
+            s.close()
+        Methods.getSettings()
         if not os.path.isfile("progress.txt"):#if progress file doesn't exist create it
             file = open("progress.txt", "a+")
         else:
@@ -195,3 +199,95 @@ class Elements(QWidget, general.Methods):
         self.erase.hide()
         self.mainPlane.setGeometry(QRect(0, 0, w, h-self.bottomBarHeight))
         self.bottomBar.setGeometry(QRect(0, h-self.bottomBarHeight, w, self.bottomBarHeight))
+
+        self.save = QPushButton(self.bottomBar)
+        self.save.move(w-55,7)
+        self.save.setText("Save")
+        self.save.setStyleSheet("""
+            background: none;
+            background-color = white;
+            border-color: none;
+            border-width: 2px;
+            color: white;
+            font: bold 18px;
+        """)
+        self.save.show()
+
+        self.bullLabel = QLabel(self)
+        self.bullLabel.move(5,10)
+        self.bullLabel.setText(
+        "<font color='white'><b>Hotkeys</b><br>"+
+        "______________________"+"<br><br><br><br><br><br>"+
+        "<b>Episodes & Skipping</b><br>"+
+        "______________________"
+        )
+        self.bullLabel.setStyleSheet("""
+            font-size: 18px;
+        """)
+        self.bullLabel.show()
+
+        self.hotkeyDesc = QLabel(self)
+        self.hotkeyDesc.move(5,80)
+        self.hotkeyDesc.setText(
+            "<font color='white' size=5>Skip Episode: </font>"+"<br><br>"+
+            "<font size=4 color='#555555'><i>*Default is mouse right click</i></font>"
+        )
+        self.hotkeyDesc.show()
+
+        self.hotkey = QLabel(self)
+        self.hotkey.move(110,82)
+        self.hotkey.setText(Methods.getHotkey())
+        self.hotkey.setStyleSheet("""
+            color: #555555;
+            font-size: 14px;
+        """)
+        self.hotkey.show()
+
+        self.change = QPushButton(self)
+        self.change.move(155,80)
+        self.change.setText("Change")
+        self.change.setStyleSheet("""
+            color: white;
+            background-color: none;
+            font-size: 16px;
+            border: 2px outset;
+            border-color: white;
+            border-radius: 10px;
+        """)
+        self.change.show()
+
+        self.default = QPushButton(self)
+        self.default.move(215,80)
+        self.default.setText(" * ")
+        self.default.setStyleSheet("""
+            color: white;
+            background-color: none;
+            font-size: 16px;
+            border: 2px outset;
+            border-color: white;
+        """)
+        self.default.show()
+
+        self.timerPref = QCheckBox("Skip Timer",self)
+        self.timerPref.move(5,230)
+        if Methods.skipTimer:
+            self.timerPref.setChecked(True)
+        else:
+            self.timerPref.setChecked(False)
+        self.timerPref.setStyleSheet("""
+            color: white;
+            font-size: 16px;
+        """)
+        self.timerPref.show()
+
+        self.nextShow = QCheckBox("Have Shortcut to next Episode",self)
+        if not Methods.stne:
+            self.nextShow.setChecked(False)
+        else:
+            self.nextShow.setChecked(True)
+        self.nextShow.move(5,270)
+        self.nextShow.setStyleSheet("""
+            color: white;
+            font-size: 16px;
+        """)
+        self.nextShow.show()

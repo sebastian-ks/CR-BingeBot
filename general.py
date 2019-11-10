@@ -4,6 +4,10 @@ import skip
 
 class Methods():
 
+    activeWindow = "main"
+    skipTimer = True
+    stne = False
+
     def restart():
         python = sys.executable
         os.execl(python,python, * sys.argv)
@@ -120,3 +124,46 @@ class Methods():
 
     def getSeries_from_mug_code(code):
         return code.split("#")[0]
+
+    def getHotkey():
+        file = open("settings","r")
+        hotkeySettings = file.readlines()[0]
+        return hotkeySettings.split(":")[1]
+
+    def setHotkey(hk):
+        file = open("settings","r+")
+        lines = file.readlines()
+        lines[0] = "HK:"+hk+"\n"
+        file.close()
+        os.remove("settings")
+        open("settings", "a+").writelines(lines)
+
+    def setTimerSettings(bool):
+        file = open("settings","r+")
+        lines = file.readlines()
+        lines[2] = "SkipTimer:"+str(bool)+"\n"
+        file.close()
+        os.remove("settings")
+        open("settings", "a+").writelines(lines)
+
+    def setStneSettings(bool):
+        file = open("settings","r")
+        lines = file.readlines()
+        lines[1] = "Shortcut:"+str(bool)+"\n"
+        file.close()
+        os.remove("settings")
+        open("settings", "a+").writelines(lines)
+
+    def getSettings():
+        file = open("settings","r")
+        lines = file.readlines()
+        file.close()
+        if lines[1].split(":")[1] == "True\n":
+            Methods.stne = True
+        else:
+            Methods.stne = False
+
+        if lines[2].split(":")[1] == "True\n":
+            Methods.skipTimer = True
+        else:
+            Methods.skipTimer = False

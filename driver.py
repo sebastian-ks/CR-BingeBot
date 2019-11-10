@@ -18,6 +18,7 @@ import time
 import subprocess
 import elem
 from elem import Elements
+from general import Methods
 import general
 from pynput.mouse import Button, Listener
 import os
@@ -155,10 +156,18 @@ class Driver(general.Methods):
                     file.write(url + "#"+title+"#"+ep+"#"+epName+ "\n")
 
 
+    def prepareSkip(browser):
+        if Methods.skipTimer:
+            os.system("pythonw skip.pyw")
+        else:
+            Driver.skip(browser)
+
     def skip(browser):
-        browser.get(Driver.nextEP)
-        Driver.fullscreen = False
+        mouse.unhook_all() #so skip doesn't trigger bc event still activated
         Driver.skipInit = False
+        Driver.fullscreen = False
+        browser.get(Driver.nextEP)
+        Driver.unclicked = True
         Driver.nextEP = ""
 
 
@@ -167,22 +176,32 @@ class Driver(general.Methods):
             if (Driver.getEpisode(browser.current_url,browser) != Driver.getEpisode(Driver.savedEpisodeUrl,browser)):
                 Driver.fullscreen = False
                 Driver.unclicked = True
+                Driver.skipInit = False
             if Driver.unclicked:
                 Driver.savedEpisodeUrl = browser.current_url
                 title,ep,epName = Driver.getData(browser)
                 Driver.nextEP = Driver.getMugs(browser,ep,title)
-                Driver.write_to_file(Driver.savedEpisodeUrl,title,ep,epName,browser)
+                if not Methods.stne or not Driver.nextEP:
+                    Driver.write_to_file(Driver.savedEpisodeUrl,title,ep,epName,browser)
+                else:
+                    Driver.write_to_file(Driver.nextEP,title,ep,epName,browser)
                 Driver.unclicked = False
             if not Driver.fullscreen and not Driver.skipInit:
                 browser.implicitly_wait(1) # loading is guaranteed to take some time so already do 5sec buffer instead of recursion in Driver.maximize()
+                print("make")
                 dur = Driver.interact(browser)
             else:
                 if not Driver.skipInit and Driver.nextEP:
-                    mouse.on_right_click(lambda: os.system("pythonw skip.pyw"))
+                    mouse.on_right_click(lambda: Driver.prepareSkip(browser))
                     Driver.skipInit = True
                 if os.path.exists("temp"):
                     os.remove("temp")
                     Driver.skip(browser)
+                if os.path.exists("temp_cancel"):
+                    os.remove("temp_cancel")
+                    mouse.unhook_all()
+                    Driver.skipInit = False
+
         else:
             Driver.fullscreen = False
             Driver.unclicked = True

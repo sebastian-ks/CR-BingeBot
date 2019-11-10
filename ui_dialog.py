@@ -5,7 +5,6 @@ from functools import partial
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-#from PyQt5.QObject import QIODevice
 from tkinter import *
 from tkinter import filedialog
 from functools import partial
@@ -16,6 +15,8 @@ import skip
 from general import Methods
 import time
 import mouse
+import asyncio
+from aioconsole import ainput
 
 class Ui_Dialog(elem.Elements):
     x = __import__('elem').Elements.windowX
@@ -172,13 +173,17 @@ class Ui_Dialog(elem.Elements):
         Driver.setupDriver(url)
 
     def openSettings(self):
-        st = Settings()
+        if Methods.activeWindow == "main":
+            st = Settings()
+            st.show()
+            Methods.activeWindow = "settings"
 
 class Settings(Ui_Dialog):
 
     def __init__(self):
         super().__init__()
         self.setupSUi()
+        self.eventsS()
 
     def setupSUi(self):
         x = super().pos().x() + self.w/1.5
@@ -187,8 +192,40 @@ class Settings(Ui_Dialog):
         h = self.h - self.bottomBarHeight
         self.setGeometry(x,y,w,h)
         self.setupSettings(w,h)
-        self.show()
 
+    def eventsS(self):
+        self.save.clicked.connect(self.saved)
+        #self.change.clicked.connect(self.changeHotkey)
+        self.default.clicked.connect(self.setDefault)
+
+    def saved(self):
+        if self.timerPref.isChecked():
+            Methods.setTimerSettings(True)
+            Methods.skipTimer = True
+        else:
+            Methods.setTimerSettings(False)
+            Methods.skipTimer = False
+
+        if self.nextShow.isChecked():
+            Methods.setStneSettings(True)
+            Methods.stne = True
+        else:
+            Methods.setStneSettings(False)
+            Methods.stne = False
+
+        Methods.activeWindow = "main"
+        self.hide()
+
+    #@asyncio.coroutine
+    def changeHotkey(self):
+        self.hotkey.setText("<input>")
+        hk = input()
+        Methods.setHotkey(hk)
+        self.hotkey.setText('\"'+hk+'\"')
+
+    def setDefault(self):
+        Methods.setHotkey("None")
+        self.hotkey.setText(Methods.getHotkey())
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
