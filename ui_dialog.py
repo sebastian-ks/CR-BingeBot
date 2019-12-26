@@ -11,12 +11,9 @@ from functools import partial
 from driver import Driver
 import subprocess
 import elem
-import skip
 from general import Methods
 import time
 import mouse
-import asyncio
-from aioconsole import ainput
 
 class Ui_Dialog(elem.Elements):
     x = __import__('elem').Elements.windowX
@@ -91,7 +88,7 @@ class Ui_Dialog(elem.Elements):
                 self.page -= 1
                 self.updateWidgets(self.mainPlane)
         else:
-            file = open("progress.txt", "r")
+            file = open("progress.txt", "r" )
             episodes = file.readlines()
             if len(episodes) > self.page*3+3:
                 if (len(episodes) - (self.page*3+3)) < 4:
@@ -101,29 +98,29 @@ class Ui_Dialog(elem.Elements):
 
     def chooseDestination(self,id):
         des = self.page*3 +id
-        file = open("progress.txt", "r+")
+        file = open("progress.txt", "r+" )
         episodes = list(reversed(file.readlines()))
         file.close()
         self.goTo(Methods.url(episodes[des]))
 
     def remove(self,id):
         toremove = self.page*3+id
-        file = open("progress.txt", "r+")
+        file = open("progress.txt", "r+" )
         episodes = list(reversed(file.readlines()))
         os.remove("assets\\mugs\\"+Methods.getMugCode(episodes[toremove]))
         del episodes[toremove]
         file.close()
         os.remove("progress.txt")
-        open("progress.txt", "a+").writelines(reversed(episodes))
+        open("progress.txt", "a+" ).writelines(reversed(episodes))
         self.updateWidgets(self.mainPlane)
 
     def erasefunc(self):
-        file = open("progress.txt", "r")
+        file = open("progress.txt", "r" )
         episodes = file.readlines()
         file.close()
         if len(episodes) > 0:
             self.hover(self.erase,"out")
-            open("progress.txt", "w").close()
+            open("progress.txt", "w" ).close()
             shutil.rmtree("assets\\mugs")
             self.updateWidgets(self.mainPlane)
 
@@ -134,7 +131,7 @@ class Ui_Dialog(elem.Elements):
             obj.setPixmap(pm1)
 
     def hover(self,obj,mouseState):
-        file = open("progress.txt", "r")
+        file = open("progress.txt", "r" )
         episodes = file.readlines()
         file.close()
         if obj is self.forward:

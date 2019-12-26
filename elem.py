@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import *
 from general import Methods
 import general
 import os
-import skip
 
 class Elements(QWidget, general.Methods):
     windowX = 800
@@ -66,14 +65,14 @@ class Elements(QWidget, general.Methods):
 
     def updateWidgets(self,parent):
         if not os.path.isfile("settings"):
-            s = open("settings", "w")
+            s = open("settings", "w" )
             s.write("HK:None\nShortcut:False\nSkipTimer:True")
             s.close()
         Methods.getSettings()
         if not os.path.isfile("progress.txt"):#if progress file doesn't exist create it
-            file = open("progress.txt", "a+")
+            file = open("progress.txt", "a+" )
         else:
-            file = open("progress.txt", "r")
+            file = open("progress.txt", "r" )
         Methods.manageMugs()
         episodes = list(reversed(file.readlines()))
         showsOnPage = episodes[(self.page*3):(self.page*3+3)]
@@ -86,16 +85,17 @@ class Elements(QWidget, general.Methods):
                 self.delbtns.append(self.Clicklabel(self.activeEpisodes[len(self.activeEpisodes)-1]))
         for wid in self.activeEpisodes[0:showCount]:
             i = self.activeEpisodes.index(wid)
+            rowsInwid = 3
             #widgets
             wid.setGeometry(QRect(0,i*(self.mainPlaneThird+2), self.window_Width, self.mainPlaneThird))
             wid.setAttribute(Qt.WA_StyledBackground)
             wid.setStyleSheet("background-color: none;")
             wid.show()
             #labels
-            self.episodeLabels[i].setText("<font color='white' size=5><b>" + Methods.getSeries(showsOnPage[i]) + "</b></font><br><br>"
+            self.episodeLabels[i].setText("<font color='white' size=5><b>" + Methods.print_series(showsOnPage[i]) + "</b></font><br><br>"
                                             +"<font color ='#EEEDED' size=4>"+Methods.print_season(showsOnPage[i]) + "<br>"
                                             +Methods.getTitle(showsOnPage[i])+"</font>")
-            self.episodeLabels[i].move(self.window_Width/2,self.mainPlaneThird/6)
+            self.episodeLabels[i].move(self.window_Width/3+30,self.mainPlaneThird/6-(len(self.episodeLabels[i].text().split("<br>"))-3)*5)
             self.episodeLabels[i].setStyleSheet("background-color: none;")
             self.episodeLabels[i].show()
             #mugs
@@ -121,7 +121,7 @@ class Elements(QWidget, general.Methods):
     def setup(self,w,h):
         self.topBar = QWidget(self)
         self.topBar.setGeometry(QRect(0, 0, w, self.topBarHeight))
-        self.topBar.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(199, 021, 133, 255));\n"
+        self.topBar.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 #5c14ea);\n"
 "border-color: black;\n"
 "border: 3px solid;")
 

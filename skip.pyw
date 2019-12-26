@@ -62,7 +62,6 @@ class Skip(QWidget):
 
     def cancelSkip(self):
         self.timer.stop()
-        open("temp_cancel","w")
         self.close()
 
 if __name__ == "__main__":

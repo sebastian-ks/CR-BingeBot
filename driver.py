@@ -138,7 +138,7 @@ class Driver(general.Methods):
             return
         if "Folge" in browser.title or "Episode" in browser.title:
             if os.path.isfile("progress.txt"):
-                file = open("progress.txt", "r+")
+                file = open("progress.txt", "r+" )
                 episodes = file.readlines()
                 if episodes is not None:
                     for e in episodes:#check same series to replace
@@ -148,7 +148,7 @@ class Driver(general.Methods):
                             episodes.append(url + "#"+title+"#"+ep+"#"+epName+ "\n")
                             file.close()
                             os.remove("progress.txt")
-                            open("progress.txt", "a+").writelines(episodes)
+                            open("progress.txt", "a+" ).writelines(episodes)
                             return
 
                     file.write(url + "#"+title+"#"+ep+"#"+epName+ "\n") #new series entry
@@ -188,7 +188,6 @@ class Driver(general.Methods):
                 Driver.unclicked = False
             if not Driver.fullscreen and not Driver.skipInit:
                 browser.implicitly_wait(1) # loading is guaranteed to take some time so already do 5sec buffer instead of recursion in Driver.maximize()
-                print("make")
                 dur = Driver.interact(browser)
             else:
                 if not Driver.skipInit and Driver.nextEP:
@@ -197,10 +196,6 @@ class Driver(general.Methods):
                 if os.path.exists("temp"):
                     os.remove("temp")
                     Driver.skip(browser)
-                if os.path.exists("temp_cancel"):
-                    os.remove("temp_cancel")
-                    mouse.unhook_all()
-                    Driver.skipInit = False
 
         else:
             Driver.fullscreen = False
@@ -212,13 +207,13 @@ class Driver(general.Methods):
         Driver.openDebug(port,"D:\\Selenium")
         options = Options()
         options.add_experimental_option("debuggerAddress","localhost:" + str(port))
-        try:
-            browser = webdriver.Chrome(ChromeDriverManager().install(),options=options)
-            browser.get(url)
-            browser.maximize_window()
-        except:
-            ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
-
+        #try:
+        browser = webdriver.Chrome("C:\\Users\\Zaby\\.wdm\\chromedriver\\79.0.3945.36\\win32\\chromedriver.exe",options=options)
+        browser.get(url)
+        browser.maximize_window()
+        #except Exception as e:
+        #    ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
+        #ChromeDriverManager().install()
         try:
             while True:
                 Driver.controller(browser)

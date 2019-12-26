@@ -1,6 +1,5 @@
 import sys
 import os
-import skip
 
 class Methods():
 
@@ -33,6 +32,18 @@ class Methods():
             crunch = ep
         dis = crunch.split(" ")
         return dis[0]+dis[1]
+
+    def print_series(entry):
+        series = Methods.getSeries(entry)
+        if len(series) > 27:
+            splitted = series.split(" ")
+            firstline = ""
+            secondline = ""
+            for i in range(len(splitted)-1):
+                firstline = firstline + splitted[i]+" "
+            return firstline+"<br>"+splitted[-1]
+        else:
+            return series
 
     def print_season(entry):
         ep = entry.split("#")[2]
@@ -144,7 +155,7 @@ class Methods():
         lines[2] = "SkipTimer:"+str(bool)+"\n"
         file.close()
         os.remove("settings")
-        open("settings", "a+").writelines(lines)
+        open("settings", "a+" ).writelines(lines)
 
     def setStneSettings(bool):
         file = open("settings","r")
@@ -152,10 +163,10 @@ class Methods():
         lines[1] = "Shortcut:"+str(bool)+"\n"
         file.close()
         os.remove("settings")
-        open("settings", "a+").writelines(lines)
+        open("settings", "a+" ).writelines(lines)
 
     def getSettings():
-        file = open("settings","r")
+        file = open("settings","r" )
         lines = file.readlines()
         file.close()
         if lines[1].split(":")[1] == "True\n":
