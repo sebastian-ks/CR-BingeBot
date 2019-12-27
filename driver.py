@@ -24,10 +24,11 @@ from pynput.mouse import Button, Listener
 import os
 import mouse
 
-
 #Driver class sets up Driver which opens window and loads CR
 #also controls the checkups when episodes are finished and always sets the episode automatically in full-screen mode
 class Driver(general.Methods):
+
+
     fullscreen = False
     savedEpisodeUrl = ""
     unclicked = True
@@ -109,9 +110,11 @@ class Driver(general.Methods):
             except IndexError:
                 nextEp = ""
             src = epMug.get_attribute('src')
+            if "?" in title:
+                title = title.replace("?", "_;")
             dir = "assets\\mugs\\"+title+"#"+Driver.season(ep)+Driver.episodeCode(ep)+".jpg"
             if not os.path.exists(dir):
-                urllib.request.urlretrieve(src, dir)
+                urllib.request.urlretrieve(src, dir) #downloads mug
             return nextEp
 
     def getEpisode(url,browser):
@@ -158,7 +161,7 @@ class Driver(general.Methods):
 
     def prepareSkip(browser):
         if Methods.skipTimer:
-            os.system("pythonw skip.pyw")
+            os.system("start pythonw skip.pyw")
         else:
             Driver.skip(browser)
 
@@ -216,7 +219,8 @@ class Driver(general.Methods):
         #ChromeDriverManager().install()
         try:
             while True:
-                Driver.controller(browser)
+                if "Folge" in browser.title or "Episode" in browser.title:
+                    Driver.controller(browser)
         except ElementNotInteractableException:
             print("loading error")
         except UnboundLocalError:

@@ -130,6 +130,8 @@ class Methods():
         series = Methods.getSeries(entry)
         season = Methods.season(epID)
         episode = Methods.episodeCode(epID)
+        if "?" in series:
+            series = series.replace("?","_;")
         code = series+"#"+season+episode+".jpg"
         return code
 
