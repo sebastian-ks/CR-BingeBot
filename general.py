@@ -54,6 +54,14 @@ class Methods():
             seaString = "<b>"+ep+"</b>"
         return seaString
 
+    def print_episodeTitle(entry):
+        title = Methods.getTitle(entry)
+        if len(title) > 52:
+            fit = title[0:48]
+            title = fit + "...\""
+        return title
+
+
     def getSeries_from_url(url):
         if url == "" or url is None:
             return url

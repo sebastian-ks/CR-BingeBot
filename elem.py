@@ -94,7 +94,7 @@ class Elements(QWidget, general.Methods):
             #labels
             self.episodeLabels[i].setText("<font color='white' size=5><b>" + Methods.print_series(showsOnPage[i]) + "</b></font><br><br>"
                                             +"<font color ='#EEEDED' size=4>"+Methods.print_season(showsOnPage[i]) + "<br>"
-                                            +Methods.getTitle(showsOnPage[i])+"</font>")
+                                            +Methods.print_episodeTitle(showsOnPage[i])+"</font>")
             self.episodeLabels[i].move(self.window_Width/3+30,self.mainPlaneThird/6-(len(self.episodeLabels[i].text().split("<br>"))-3)*5)
             self.episodeLabels[i].setStyleSheet("background-color: none;")
             self.episodeLabels[i].show()

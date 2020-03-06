@@ -16,24 +16,24 @@ import webbrowser
 import urllib.request
 import time
 import subprocess
-import elem
-from elem import Elements
 from general import Methods
 import general
 from pynput.mouse import Button, Listener
 import os
 import mouse
 
+
+DISCONNECTED_MSG = 'Unable to evaluate script: disconnected: not connected to DevTools\n'
 #Driver class sets up Driver which opens window and loads CR
 #also controls the checkups when episodes are finished and always sets the episode automatically in full-screen mode
 class Driver(general.Methods):
-
 
     fullscreen = False
     savedEpisodeUrl = ""
     unclicked = True
     skipInit = False
     nextEP = ""
+    ass = True
 
     def openDebug(port,saveUnder):
         cmd = 'chrome.exe -remote-debugging-port=' + str(port) + ' --user-data-dir="' + saveUnder + '"'
@@ -221,12 +221,11 @@ class Driver(general.Methods):
             while True:
                 if "Folge" in browser.title or "Episode" in browser.title:
                     Driver.controller(browser)
+
         except ElementNotInteractableException:
             print("loading error")
         except UnboundLocalError:
             pass
         except (NoSuchWindowException, WebDriverException) as e:
-            print("browser quit because of an exception")
-            print(e)
             browser.quit()
-            Driver.restart() #no update because of weird bug that hides widget (no clue)
+            Driver.restart()
