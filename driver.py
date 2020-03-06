@@ -62,12 +62,12 @@ class Driver(general.Methods):
         if "Folge" in browser.title or "Episode" in browser.title:
             frame = browser.find_element_by_xpath("//iframe[@id='vilos-player']")
             browser.switch_to.frame(frame)
-            container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
+            container = browser.find_element_by_xpath("//div[@id='velocity-controls-package']")
             while Driver.fullscreen is not True:
                 try:
                     return Driver.maximize(browser,container)
                 except StaleElementReferenceException:
-                    container = browser.find_element_by_xpath("//div[@id='vilosControlsContainer']")
+                    container = browser.find_element_by_xpath("//div[@id='velocity-controls-package']")
                     return Driver.maximize(browser,container)
 
         browser.switch_to.default_content()
