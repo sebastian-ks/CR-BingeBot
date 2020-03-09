@@ -132,14 +132,22 @@ class Methods():
                         if Methods.getSeries_from_mug_code(mug) == newestSeries:
                             os.remove(mugDir+"\\"+mug)
 
+    def title_wo_invCharacters(title):
+        if "?" in title:
+            title = title.replace("?", "_;qm;_")
+        if "/" in title:
+            title = title.replace("/", "_;sl;_")
+        if "\\" in title:
+            title = title.replace("\\", "__;bsl;_")
+        return title
+
 
     def getMugCode(entry):
         epID = Methods.getEpisode(entry)
         series = Methods.getSeries(entry)
         season = Methods.season(epID)
         episode = Methods.episodeCode(epID)
-        if "?" in series:
-            series = series.replace("?","_;")
+        series = Methods.title_wo_invCharacters(series)
         code = series+"#"+season+episode+".jpg"
         return code
 

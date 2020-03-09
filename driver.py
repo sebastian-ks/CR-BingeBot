@@ -89,11 +89,11 @@ class Driver(general.Methods):
                 desc = browser.find_element_by_xpath("//div[@id='showmedia_about_info']")
                 epName = desc.find_element_by_xpath(".//h4").text
                 if title is None or ep is None or epName is None:
-                    Driver.getData(browser)
+                    return Driver.getData(browser)
                 else:
                     return title,ep,epName
             else:
-                Driver.getData(browser)
+                return Driver.getData(browser)
 
     def getMugs(browser,ep,title):
         if "Folge" in browser.title or "Episode" in browser.title:
@@ -110,8 +110,7 @@ class Driver(general.Methods):
             except IndexError:
                 nextEp = ""
             src = epMug.get_attribute('src')
-            if "?" in title:
-                title = title.replace("?", "_;")
+            title = Methods.title_wo_invCharacters(title)
             dir = "assets\\mugs\\"+title+"#"+Driver.season(ep)+Driver.episodeCode(ep)+".jpg"
             if not os.path.exists(dir):
                 urllib.request.urlretrieve(src, dir) #downloads mug
@@ -203,6 +202,7 @@ class Driver(general.Methods):
         else:
             Driver.fullscreen = False
             Driver.unclicked = True
+            return
 
 
     def setupDriver(url):
@@ -212,10 +212,11 @@ class Driver(general.Methods):
         options.add_experimental_option("debuggerAddress","localhost:" + str(port))
         #try:
         browser = webdriver.Chrome("C:\\Users\\Zaby\\.wdm\\chromedriver\\79.0.3945.36\\win32\\chromedriver.exe",options=options)
-        browser.get(url)
-        browser.maximize_window()
-        #except Exception as e:
-        #    ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
+        try:
+            browser.get(url)
+            browser.maximize_window()
+        except Exception as e:
+            ctypes.windll.user32.MessageBoxW(0, "Can't reach Crunchyroll\nMake sure you are connected to the Internet" , "An Exception occured",1)
         #ChromeDriverManager().install()
         try:
             while True:
